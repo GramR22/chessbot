@@ -7,7 +7,7 @@ alpha -  is the lower bound of the score we can get
 beta  -  is the upper of the score we can get
 evalulator is our evaluation.py
 
-In this function it will recursivly check future moves maximizing the best move for both teams
+In this function it will recursivly using alpha beta pruning
 """
 
 
