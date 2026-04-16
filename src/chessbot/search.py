@@ -40,7 +40,7 @@ def negamax(board, depth, alpha, beta, evaluator):
     return best
 
 
-def find_best_move(board, depth, evaluator, alpha = -float("inf"), beta = -float("inf")):
+def find_best_move(board, depth, evaluator, alpha = -float("inf"), beta = float("inf")):
     
     #init our variables
     best_move = None
@@ -51,14 +51,14 @@ def find_best_move(board, depth, evaluator, alpha = -float("inf"), beta = -float
         
         # same as before
         board.push(move)
-        score = -negamax(board, depth-1, -alpha, -beta, evaluator)
+        score = -negamax(board, depth-1, -beta, -alpha, evaluator)
         board.pop()
         
         # get best move based on score
         if score > best_score:
             best_score = score
             best_move = move
-
+            alpha = max(alpha,score)
     return best_move
 
 
