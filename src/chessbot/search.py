@@ -14,28 +14,28 @@ In this file it will recursivly using alpha beta pruning
 
 
 def negamax(board, depth, alpha, beta, evaluator):
-    if depth == 0 or board.is_game_over:
+    if depth == 0 or board.is_game_over():  
         score = evaluator(board)
         return score if board.turn == chess.WHITE else -score
-
-    #init something
-    best_move = -float("inf")
     
+    #init something
+    best = -float("inf")  
+
     for move in board.legal_moves:
         board.push(move)
-        score = -negamax(board, depth - 1, -alpha, -beta, evaluator)
-        board.pop()
-
+        score = -negamax(board, depth - 1, -beta, -alpha, evaluator)
     # is this move better than what we have if yes update
-        if score > best_move:
+        if score > best:
             best = score
+    
     # have we passed our lower bound if yes update because we are sure we can get atleast this much
         if best > alpha:
             alpha = best
+    
     # if our best is greater than beta we exit because our opponent has beeten us beyond this
         if best >= beta:
             break
-
+        
     # this is our best move
     return best
 
@@ -61,6 +61,4 @@ def find_best_move(board, depth, evaluator, alpha = -float("inf"), beta = float(
             alpha = max(alpha,score)
     return best_move
 
-
-print(find_best_move(chess.Board(), 4, evaluator))
 
