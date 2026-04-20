@@ -197,21 +197,28 @@
                 return;
             }
 
-            if (sq === selected) {
-                selected = null;
-                renderBoard(currentFen());
-                return;
-            }
-
             if (isWhite) {
                 selected = sq;
-                renderBoard(currentFen());
+                legalMoves = [];          // clear stale dots immediately
+                renderBoard(lastFen);
+                fetchLegalMoves(sq).then(moves => {
+                    legalMoves = moves;
+                    renderBoard(lastFen);
+                });
                 return;
             }
 
-            const from = selected;
-            selected = null;
-            sendMove(from, sq);
+            if (!legalMoves.includes(sq)) {
+                    selected = null;
+                    legalMoves = [];
+                    renderBoard(lastFen);
+                    return;
+                }
+
+                const from = selected;
+                selected = null;
+                legalMoves = [];
+                sendMove(from, sq);
         }
 
         function currentFen() {
@@ -239,6 +246,7 @@
             .then(r => r.json())
             .then(data => {
                 waiting = false;
+                legalMoves = [];
                 if (data.error) {
                     setStatus('Illegal move, try again', 'gameover');
                     renderBoard(lastFen);
