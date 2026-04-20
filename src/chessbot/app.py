@@ -34,6 +34,8 @@ def move():
     if board.is_game_over():
         return jsonify({"fen": board.fen(), "game_over": True, "result": board.result()})
 
+    # add timer wait random 4 seconds - 6 seconds
+
     bot_move = find_best_move(board, DEPTH, evaluate_curr_pos)
     if bot_move:
         board.push(bot_move)
@@ -45,6 +47,17 @@ def move():
         "result": board.result() if board.is_game_over() else None
     })
 
+@app.route('/legal_moves', methods=['POST'])
+def legal_moves():
+    data = request.json
+    square = data['square']
+
+    moves = []
+    for move in board.legal_moves:
+        if chess.square_name(move.from_square) == square:
+            moves.append(chess.square_name(move.to_square))
+
+    return jsonify({ "moves": moves })
 
 @app.route("/reset", methods=["POST"])
 def reset():

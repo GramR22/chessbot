@@ -5,7 +5,7 @@ import chess
 def evaluate_curr_pos(board: chess.Board) -> int:
     """
         Each peice is given a value based on how powerful it is in the game. 
-        """
+    """
     if board.is_game_over():
         if board.is_checkmate():
             return -10000  # the side to move is mated
