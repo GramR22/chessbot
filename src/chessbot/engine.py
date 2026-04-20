@@ -6,7 +6,7 @@ from evaluation import evaluate_curr_pos
 
 # how many moves ahead the bot looks by default
 # higher = smarter but slower
-DEFAULT_DEPTH = 4
+DEFAULT_DEPTH = 40
 
 
 def uci_loop():

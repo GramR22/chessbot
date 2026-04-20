@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import chess
 import sys
 import os
+import time
+import random
 
 sys.path.insert(0, os.path.dirname(__file__))
 from search import find_best_move
@@ -16,36 +18,53 @@ DEPTH = 3
 def index():
     return render_template("index.html")
 
-
-@app.route("/move", methods=["POST"])
-def move():
+@app.route("/player_move", methods=["POST"])
+def player_move():
     global board
-    data = request.json
-    uci = data.get("move", "")
 
+    # Guard against the client calling this out of turn
+    if board.turn != chess.WHITE:  # assuming the human plays White
+        return jsonify({"error": "not your turn"}), 400
+
+    uci = (request.json or {}).get("move", "")
     try:
-        player_move = chess.Move.from_uci(uci)
-        if player_move not in board.legal_moves:
+        move = chess.Move.from_uci(uci)
+        if move not in board.legal_moves:
             return jsonify({"error": "illegal move"}), 400
-        board.push(player_move)
+        board.push(move)
     except Exception:
         return jsonify({"error": "invalid move"}), 400
 
+    return jsonify({
+        "fen": board.fen(),
+        "game_over": board.is_game_over(),
+        "result": board.result() if board.is_game_over() else None,
+    })
+# Make it so when bot moves have a green boarder around piece that moved
+
+@app.route("/bot_move", methods=["POST"])
+def bot_move():
+    global board
+
     if board.is_game_over():
-        return jsonify({"fen": board.fen(), "game_over": True, "result": board.result()})
+        return jsonify({"error": "game over"}), 400
+    if board.turn == chess.WHITE:
+        return jsonify({"error": "not bot's turn"}), 400
 
-    # add timer wait random 4 seconds - 6 seconds
+    time.sleep(random.uniform(2, 3))
+    move = find_best_move(board, DEPTH, evaluate_curr_pos)
+    if move is None:
+        return jsonify({"error": "no legal move"}), 400
 
-    bot_move = find_best_move(board, DEPTH, evaluate_curr_pos)
-    if bot_move:
-        board.push(bot_move)
+    board.push(move)
 
     return jsonify({
         "fen": board.fen(),
-        "bot_move": bot_move.uci() if bot_move else None,
+        "bot_move": move.uci(),
         "game_over": board.is_game_over(),
-        "result": board.result() if board.is_game_over() else None
+        "result": board.result() if board.is_game_over() else None,
     })
+
 
 @app.route('/legal_moves', methods=['POST'])
 def legal_moves():

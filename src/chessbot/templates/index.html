@@ -83,12 +83,56 @@
             position: absolute;
         }
 
+        .bot-move {
+            box-shadow: inset 0 0 0 4px #56c26a;
+        }
+
         button:hover { background: #444; }
+
+        #board-container {
+            display: grid;
+            grid-template-columns: 24px auto;
+            grid-template-rows: auto 24px;
+        }
+
+        #ranks {
+            grid-column: 1;
+            grid-row: 1;
+            display: grid;
+            grid-template-rows: repeat(8, 68px);
+            justify-items: center;
+            align-items: center;
+            color: #888;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        #files {
+            grid-column: 2;
+            grid-row: 2;
+            display: grid;
+            grid-template-columns: repeat(8, 68px);
+            justify-items: center;
+            align-items: center;
+            color: #888;
+            font-family: monospace;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
     <h1>ChessBot</h1>
-    <div id="board"></div>
+    <div id="board-container">
+        <div id="ranks">
+            <div>8</div><div>7</div><div>6</div><div>5</div>
+            <div>4</div><div>3</div><div>2</div><div>1</div>
+        </div>
+        <div id="board"></div>
+        <div id="files">
+            <div>a</div><div>b</div><div>c</div><div>d</div>
+            <div>e</div><div>f</div><div>g</div><div>h</div>
+        </div>
+    </div>
     <div id="status" class="yourturn">Your turn — play as White</div>
     <button onclick="resetGame()">New Game</button>
 
@@ -115,6 +159,7 @@
         const FILES = 'abcdefgh';
         let boardState = {};
         let selected = null;
+        let botMoveTo = null;
         let waiting = false;
         let gameOver = false;
 
@@ -160,6 +205,10 @@
                         div.classList.add('selected');
                     }
 
+                    if (botMoveTo === sq) {
+                        div.classList.add('bot-move');
+                    }
+
                     div.addEventListener('click', () => onClick(sq));
                     board.appendChild(div);
 
@@ -198,6 +247,7 @@
             }
 
             if (isWhite) {
+                botMoveTo = null;
                 selected = sq;
                 legalMoves = [];          // clear stale dots immediately
                 renderBoard(lastFen);
@@ -233,42 +283,71 @@
             let uci = from + to;
             if (boardState[from] === 'P' && to[1] === '8') {
                 uci += 'q';
-            }
-
-            waiting = true;
-            setStatus('Bot is thinking...', 'thinking');
-
-            fetch('/move', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ move: uci })
-            })
-            .then(r => r.json())
-            .then(data => {
-                waiting = false;
-                legalMoves = [];
-                if (data.error) {
-                    setStatus('Illegal move, try again', 'gameover');
-                    renderBoard(lastFen);
-                    return;
-                }
-                lastFen = data.fen;
-                renderBoard(data.fen);
-                if (data.game_over) {
-                    gameOver = true;
-                    setStatus('Game over: ' + data.result, 'gameover');
-                } else {
-                    setStatus('Your turn, play as White', 'yourturn');
-                }
-            })
-            .catch(() => {
-                waiting = false;
-                setStatus('Error, try again', 'gameover');
-                renderBoard(lastFen);
-            });
         }
 
+    waiting = true;
+
+    // Step 1: submit the player's move
+    fetch('/player_move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ move: uci })
+    })
+    .then(r => r.json())
+    .then(data => {
+
+        if (data.error) {
+            waiting = false;
+            legalMoves = [];
+            setStatus('Illegal move, try again', 'gameover');
+            renderBoard(lastFen);
+            return null;
+        }
+        // Render the player's move immediately
+        lastFen = data.fen;
+        renderBoard(data.fen);
+
+        
+        if (data.game_over) {
+            waiting = false;
+            gameOver = true;
+            setStatus('Game over: ' + data.result, 'gameover');
+            return null;
+        }
+        // Step 2: ask the bot to move
+        setStatus('Bot is thinking...', 'thinking');
+        return fetch('/bot_move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).then(r => r.json());
+    })
+    .then(data => {
+        if (!data) return;  // short-circuited above (illegal / game over)
+        waiting = false;
+        if (data.error) {
+            setStatus('Error: ' + data.error, 'gameover');
+            return;
+        }
+        lastFen = data.fen;
+        botMoveTo = data.bot_move.slice(2, 4);
+        renderBoard(data.fen);
+        if (data.game_over) {
+            gameOver = true;
+            setStatus('Game over: ' + data.result, 'gameover');
+        } else {
+            setStatus('Your turn, play as White', 'yourturn');
+        }
+    })
+    .catch(() => {
+        waiting = false;
+        setStatus('Error, try again', 'gameover');
+        renderBoard(lastFen);
+    });
+}
+ 
+
         function resetGame() {
+            botMoveTo = null;
             fetch('/reset', { method: 'POST' })
             .then(r => r.json())
             .then(data => {
