@@ -6,6 +6,11 @@ def evaluate_curr_pos(board: chess.Board) -> int:
     """
         Each peice is given a value based on how powerful it is in the game. 
         """
+    if board.is_game_over():
+        if board.is_checkmate():
+            return -10000  # the side to move is mated
+        return 0  # stalemate, repetition, 50-move rule, insufficient material
+
     piece_value = {
         chess.PAWN: 100,
         chess.KNIGHT: 320,
@@ -41,5 +46,3 @@ def evaluate_curr_pos(board: chess.Board) -> int:
     
     # to give an evaluation of how the game is going we return white score-black score
     return (white_score-black_score)
-
-print(evaluate_curr_pos(chess.Board()))

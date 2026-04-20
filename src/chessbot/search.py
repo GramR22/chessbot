@@ -14,7 +14,12 @@ In this file it will recursivly using alpha beta pruning
 
 
 def negamax(board, depth, alpha, beta, evaluator):
-    if depth == 0 or board.is_game_over():  
+    if board.is_game_over():
+        if board.is_checkmate():
+            return -10000  # current player is mated
+        return 0  # draw (stalemate, repetition, 50-move, insufficient material)
+
+    if depth == 0:
         score = evaluator(board)
         return score if board.turn == chess.WHITE else -score
     
@@ -24,6 +29,7 @@ def negamax(board, depth, alpha, beta, evaluator):
     for move in board.legal_moves:
         board.push(move)
         score = -negamax(board, depth - 1, -beta, -alpha, evaluator)
+        board.pop()
     # is this move better than what we have if yes update
         if score > best:
             best = score

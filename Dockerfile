@@ -37,5 +37,7 @@ COPY src/ ./src/
 # moves tests to its own folder aswell
 COPY tests/ ./tests/
 
+EXPOSE 5000
+
 # depends on the img for what you use here, not all imgs have bash
-CMD ["bash"]
+CMD ["python", "src/chessbot/app.py"]
