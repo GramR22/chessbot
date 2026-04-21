@@ -1,5 +1,7 @@
 from evaluation import evaluate_curr_pos as evaluator
+from opening_book import get_polyglot_move
 import chess
+
 """
 board -  is our chess board
 depth -  is how many moves in the future do we check
@@ -47,6 +49,13 @@ def negamax(board, depth, alpha, beta, evaluator):
 
 
 def find_best_move(board, depth, evaluator, alpha = -float("inf"), beta = float("inf")):
+
+    # First, see if the opening book knows this position.
+    book_move = get_polyglot_move(board)
+
+    # If a book move exists, play it immediately and skip search.
+    if book_move is not None:
+        return book_move
     
     #init our variables
     best_move = None
