@@ -43,6 +43,43 @@ def evaluate_curr_pos(board: chess.Board) -> int:
                         len(board.pieces(chess.QUEEN, chess.BLACK)) * piece_value[chess.QUEEN],\
                         len(board.pieces(chess.KING, chess.BLACK)) * piece_value[chess.KING]])
     
-    
+    # To help with positional scores for knights and bishops
+    # knight piece-square table
+    knight_table = [
+        -500, -400, -300, -300, -300, -300, -400, -500,
+        -400, -200,   0,   50,   50,   0, -200, -400,
+        -300,   50,  100,  75,  75,  10,   5, -300,
+        -300,   0,  75,  100,  100,  75,   0, -300,
+        -300,   50,  75,  100,  100,  75,   5, -300,
+        -300,   0,  100,  75,  75,  100,   0, -300,
+        -400, -200,   0,   0,   0,   0, -20, -400,
+        -500, -400, -300, -300, -300, -300, -400, -500
+    ]
+
+    # bishop piece-square table
+    bishop_table = [
+        -200, -100, -100, -100, -100, -100, -100, -200,
+        -100,   50,   0,   0,   0,   0,   50, -100,
+        -100,  100,  100,  100,  100,  100,  100, -100,
+        -100,   0,  100,  100,  100,  100,   0, -100,
+        -100,   50,   50,  100,  100,   50,   50, -100,
+        -100,   0,   50,  100,  100,   50,   0, -100,
+        -100,   0,   0,   0,   0,   0,   0, -100,
+        -200, -100, -100, -100, -100, -100, -100, -200
+    ]
+    # knight piece-square bonus
+    for sq in board.pieces(chess.KNIGHT, chess.WHITE):
+        white_score += knight_table[sq]
+
+    for sq in board.pieces(chess.KNIGHT, chess.BLACK):
+        black_score += knight_table[chess.square_mirror(sq)]
+
+    # bishop piece-square bonus
+    for sq in board.pieces(chess.BISHOP, chess.WHITE):
+        white_score += bishop_table[sq]
+
+    for sq in board.pieces(chess.BISHOP, chess.BLACK):
+        black_score += bishop_table[chess.square_mirror(sq)]
+
     # to give an evaluation of how the game is going we return white score-black score
     return (white_score-black_score)

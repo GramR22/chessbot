@@ -9,7 +9,7 @@ from evaluation import evaluate_curr_pos
 
 app = Flask(__name__)
 board = chess.Board()
-DEPTH = 3
+DEPTH =3
 
 
 @app.route("/")
